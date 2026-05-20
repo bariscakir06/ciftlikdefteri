@@ -90,7 +90,7 @@ function Inventory() {
                   </td>
                 </tr>
               )}
-              {filtered.map((a) => (
+              {filtered.map((a, i) => (
                 <tr key={a.id} className="border-b border-border last:border-0 transition-colors hover:bg-muted/30">
                   <td className="px-5 py-3 font-medium tabular-nums">{a.tagNo}</td>
                   <td className="px-5 py-3">

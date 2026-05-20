@@ -1,9 +1,11 @@
-import { createFileRoute, Outlet, Navigate, Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { LayoutGrid, Boxes, Receipt, LogOut, Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
+  ssr: false,
   component: AuthLayout,
 });
 

@@ -1,5 +1,5 @@
-import { createFileRoute, Navigate, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Sprout } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Giriş — Çiftlik Defteri" }] }),
   component: LoginPage,
 });
@@ -19,7 +20,9 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (isAuthenticated) return <Navigate to="/" />;
+  useEffect(() => {
+    if (isAuthenticated) navigate({ to: "/" });
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();

@@ -1,9 +1,11 @@
-import { createFileRoute, Outlet, Navigate, Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { LayoutGrid, Boxes, Receipt, LogOut, Sprout } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
+  ssr: false,
   component: AuthLayout,
 });
 
@@ -19,7 +21,11 @@ function AuthLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (!isAuthenticated) return <Navigate to="/login" />;
+  useEffect(() => {
+    if (!isAuthenticated) navigate({ to: "/login" });
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">

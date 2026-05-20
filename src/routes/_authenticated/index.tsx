@@ -145,16 +145,17 @@ function Dashboard() {
           <div>
             <h2 className="text-sm font-semibold">Satış Trendi</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {range === "monthly" ? "Son 12 ay" : "Son 5 yıl"} · ciro ve adet
+              {RANGE_HINTS[range]} · ciro ve adet
             </p>
           </div>
-          <Select value={range} onValueChange={(v: "monthly" | "yearly") => setRange(v)}>
-            <SelectTrigger className="h-9 w-[150px] text-sm">
+          <Select value={range} onValueChange={(v: Range) => setRange(v)}>
+            <SelectTrigger className="h-9 w-[200px] text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="monthly">Aylık Rapor</SelectItem>
-              <SelectItem value="yearly">Yıllık Rapor</SelectItem>
+              {(Object.keys(RANGE_LABELS) as Range[]).map((r) => (
+                <SelectItem key={r} value={r}>{RANGE_LABELS[r]}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

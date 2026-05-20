@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
-import { LayoutGrid, Boxes, Receipt, LogOut, Sprout } from "lucide-react";
+import { LayoutGrid, Boxes, Receipt, LogOut, Sprout, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -9,11 +9,12 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
 });
 
-type NavItem = { to: "/" | "/inventory" | "/sales"; label: string; icon: typeof LayoutGrid; exact?: boolean };
+type NavItem = { to: "/" | "/inventory" | "/sales" | "/expenses"; label: string; icon: typeof LayoutGrid; exact?: boolean };
 const NAV: NavItem[] = [
   { to: "/", label: "Genel Bakış", icon: LayoutGrid, exact: true },
   { to: "/inventory", label: "Mevcut Mallar", icon: Boxes },
   { to: "/sales", label: "Satış & Cari", icon: Receipt },
+  { to: "/expenses", label: "Giderler", icon: Wallet },
 ];
 
 function AuthLayout() {

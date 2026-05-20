@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/inventory")({
   component: Inventory,
 });
 
-const TYPES: AnimalType[] = ["Düve", "Tosun", "İnek", "Buzağı", "Boğa"];
+const OTHER_BREED = "__other__";
 
 function Inventory() {
   const { animals, addAnimal, deleteAnimal } = useStore();

@@ -26,16 +26,12 @@ export const Route = createFileRoute("/_authenticated/inventory")({
   component: Inventory,
 });
 
-export const Route = createFileRoute("/_authenticated/inventory")({
-  head: () => ({ meta: [{ title: "Mevcut Mallar — Çiftlik Defteri" }] }),
-  component: Inventory,
-});
-
 const OTHER_BREED = "__other__";
 
 function Inventory() {
-  const { animals, addAnimal, deleteAnimal } = useStore();
+  const { animals, addAnimal, addAnimalsBulk, deleteAnimal } = useStore();
   const [addOpen, setAddOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [sellTarget, setSellTarget] = useState<Animal | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Animal | null>(null);
   const [query, setQuery] = useState("");

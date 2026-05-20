@@ -21,7 +21,11 @@ function AuthLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  if (!isAuthenticated) return <Navigate to="/login" />;
+  useEffect(() => {
+    if (!isAuthenticated) navigate({ to: "/login" });
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">

@@ -91,16 +91,14 @@ function Inventory() {
                 </tr>
               )}
               {filtered.map((a, i) => (
-                <tr key={a.id} className="border-b border-border last:border-0 transition-colors hover:bg-muted/30">
-                  <td className="px-5 py-3 font-medium tabular-nums">{a.tagNo}</td>
+                <tr key={a.id} className="border-b border-border/70 transition-colors last:border-0 even:bg-muted/20 hover:bg-[color:var(--accent)]/40">
+                  <td className="px-5 py-3 font-semibold tabular-nums text-foreground">{a.tagNo}</td>
                   <td className="px-5 py-3">
-                    <span className="inline-flex items-center rounded-md border border-border bg-background px-2 py-0.5 text-xs font-medium">
-                      {a.type}
-                    </span>
+                    <TypeBadge type={a.type} />
                   </td>
-                  <td className="px-5 py-3 text-muted-foreground">{a.breed}</td>
+                  <td className="px-5 py-3 font-medium text-foreground/80">{a.breed}</td>
                   <td className="px-5 py-3 text-muted-foreground">{formatDateTR(a.purchaseDate)}</td>
-                  <td className="px-5 py-3 text-right tabular-nums">{formatTRY(a.purchasePrice)}</td>
+                  <td className="px-5 py-3 text-right font-semibold tabular-nums text-foreground">{formatTRY(a.purchasePrice)}</td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end gap-1">
                       <TooltipProvider delayDuration={150}>

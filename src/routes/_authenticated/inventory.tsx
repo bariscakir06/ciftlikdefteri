@@ -58,6 +58,10 @@ function Inventory() {
               className="h-9 w-56 pl-8 text-sm"
             />
           </div>
+          <Button variant="outline" onClick={() => setBulkOpen(true)} className="h-9">
+            <Layers className="mr-1.5 h-4 w-4" strokeWidth={2} />
+            Toplu Ekle
+          </Button>
           <Button onClick={() => setAddOpen(true)} className="h-9">
             <Plus className="mr-1.5 h-4 w-4" strokeWidth={2} />
             Yeni Mal Ekle

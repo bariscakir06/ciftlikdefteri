@@ -172,30 +172,39 @@ const SEED_SALES: Sale[] = [
   },
 ];
 
+const SEED_EXPENSES: Expense[] = [
+  { id: "e1", date: "2026-04-08", category: "Yem", description: "TMR yem 2 ton", amount: 18500 },
+  { id: "e2", date: "2026-04-22", category: "Veteriner / İlaç", description: "Antibiyotik & vitamin", amount: 3200 },
+  { id: "e3", date: "2026-05-03", category: "Gübre", description: "Ahır temizliği & gübre çıkışı", amount: 1500 },
+  { id: "e4", date: "2026-05-10", category: "İşçilik", description: "Aylık çoban ücreti", amount: 12000 },
+];
+
 const KEY = "ciftlik-defteri-v1";
 
 interface Persisted {
   animals: Animal[];
   sales: Sale[];
+  expenses: Expense[];
   isAuthenticated: boolean;
 }
 
 function loadPersisted(): Persisted {
-  if (typeof window === "undefined") {
-    return { animals: SEED_ANIMALS, sales: SEED_SALES, isAuthenticated: false };
-  }
+  const fallback = { animals: SEED_ANIMALS, sales: SEED_SALES, expenses: SEED_EXPENSES, isAuthenticated: false };
+  if (typeof window === "undefined") return fallback;
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return { animals: SEED_ANIMALS, sales: SEED_SALES, isAuthenticated: false };
-    return JSON.parse(raw);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return { ...fallback, ...parsed, expenses: parsed.expenses ?? SEED_EXPENSES };
   } catch {
-    return { animals: SEED_ANIMALS, sales: SEED_SALES, isAuthenticated: false };
+    return fallback;
   }
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [animals, setAnimals] = useState<Animal[]>(SEED_ANIMALS);
   const [sales, setSales] = useState<Sale[]>(SEED_SALES);
+  const [expenses, setExpenses] = useState<Expense[]>(SEED_EXPENSES);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -203,19 +212,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const p = loadPersisted();
     setAnimals(p.animals);
     setSales(p.sales);
+    setExpenses(p.expenses);
     setIsAuthenticated(p.isAuthenticated);
     setHydrated(true);
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    localStorage.setItem(KEY, JSON.stringify({ animals, sales, isAuthenticated }));
-  }, [animals, sales, isAuthenticated, hydrated]);
+    localStorage.setItem(KEY, JSON.stringify({ animals, sales, expenses, isAuthenticated }));
+  }, [animals, sales, expenses, isAuthenticated, hydrated]);
 
   const value: StoreState = {
     isAuthenticated,
     animals,
     sales,
+    expenses,
     login: (u, p) => {
       if (u === "admin" && p === "admin") {
         setIsAuthenticated(true);
@@ -225,6 +236,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     logout: () => setIsAuthenticated(false),
     addAnimal: (a) => setAnimals((prev) => [{ ...a, id: crypto.randomUUID() }, ...prev]),
+    addAnimalsBulk: (list) =>
+      setAnimals((prev) => [
+        ...list.map((a) => ({ ...a, id: crypto.randomUUID() })),
+        ...prev,
+      ]),
     deleteAnimal: (id) => setAnimals((prev) => prev.filter((x) => x.id !== id)),
     sellAnimal: (s) => {
       const animal = animals.find((a) => a.id === s.animalId);
@@ -243,6 +259,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     deleteSale: (id) => setSales((prev) => prev.filter((s) => s.id !== id)),
     updateSalePayment: (id, paidAmount) =>
       setSales((prev) => prev.map((s) => (s.id === id ? { ...s, paidAmount } : s))),
+    addExpense: (e) => setExpenses((prev) => [{ ...e, id: crypto.randomUUID() }, ...prev]),
+    deleteExpense: (id) => setExpenses((prev) => prev.filter((x) => x.id !== id)),
   };
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;

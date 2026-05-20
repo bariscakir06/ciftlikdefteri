@@ -73,7 +73,7 @@ function Inventory() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-xs font-medium text-muted-foreground">
+              <tr className="border-b border-border bg-muted/60 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="px-5 py-3">Küpe No</th>
                 <th className="px-5 py-3">Tür</th>
                 <th className="px-5 py-3">Irk / Cins</th>

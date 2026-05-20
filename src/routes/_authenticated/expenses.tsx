@@ -82,7 +82,7 @@ function ExpensesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-xs font-medium text-muted-foreground">
+              <tr className="border-b border-border bg-muted/60 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="px-5 py-3">Tarih</th>
                 <th className="px-5 py-3">Kategori</th>
                 <th className="px-5 py-3">Açıklama</th>
@@ -94,20 +94,20 @@ function ExpensesPage() {
               {expenses.length === 0 && (
                 <tr><td colSpan={5} className="px-5 py-16 text-center text-sm text-muted-foreground">Henüz gider girilmemiş.</td></tr>
               )}
-              {expenses.map((e) => (
-                <tr key={e.id} className="border-b border-border last:border-0 hover:bg-muted/30">
-                  <td className="px-5 py-3 text-muted-foreground">{formatDateTR(e.date)}</td>
+              {expenses.map((e, i) => (
+                <tr key={e.id} className="border-b border-border/70 transition-colors last:border-0 even:bg-muted/20 hover:bg-[color:var(--accent)]/40">
+                  <td className="px-5 py-3 font-medium text-foreground/80">{formatDateTR(e.date)}</td>
                   <td className="px-5 py-3">
                     <span
-                      className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-0.5 text-xs font-medium"
-                      style={{ background: `color-mix(in oklab, ${EXPENSE_COLORS[e.category]} 12%, transparent)` }}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-semibold"
+                      style={{ background: `color-mix(in oklab, ${EXPENSE_COLORS[e.category]} 18%, transparent)`, color: EXPENSE_COLORS[e.category] }}
                     >
                       <span className="h-1.5 w-1.5 rounded-full" style={{ background: EXPENSE_COLORS[e.category] }} />
                       {e.category}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-muted-foreground">{e.description || "—"}</td>
-                  <td className="px-5 py-3 text-right tabular-nums">{formatTRY(e.amount)}</td>
+                  <td className="px-5 py-3 font-medium text-foreground/80">{e.description || "—"}</td>
+                  <td className="px-5 py-3 text-right font-semibold tabular-nums text-foreground">{formatTRY(e.amount)}</td>
                   <td className="px-5 py-3 text-right">
                     <button
                       onClick={() => { deleteExpense(e.id); toast.success("Gider silindi"); }}

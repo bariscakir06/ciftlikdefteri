@@ -73,7 +73,7 @@ function Inventory() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-xs font-medium text-muted-foreground">
+              <tr className="border-b border-border bg-muted/60 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="px-5 py-3">Küpe No</th>
                 <th className="px-5 py-3">Tür</th>
                 <th className="px-5 py-3">Irk / Cins</th>
@@ -90,17 +90,15 @@ function Inventory() {
                   </td>
                 </tr>
               )}
-              {filtered.map((a) => (
-                <tr key={a.id} className="border-b border-border last:border-0 transition-colors hover:bg-muted/30">
-                  <td className="px-5 py-3 font-medium tabular-nums">{a.tagNo}</td>
+              {filtered.map((a, i) => (
+                <tr key={a.id} className="border-b border-border/70 transition-colors last:border-0 even:bg-muted/20 hover:bg-[color:var(--accent)]/40">
+                  <td className="px-5 py-3 font-semibold tabular-nums text-foreground">{a.tagNo}</td>
                   <td className="px-5 py-3">
-                    <span className="inline-flex items-center rounded-md border border-border bg-background px-2 py-0.5 text-xs font-medium">
-                      {a.type}
-                    </span>
+                    <TypeBadge type={a.type} />
                   </td>
-                  <td className="px-5 py-3 text-muted-foreground">{a.breed}</td>
+                  <td className="px-5 py-3 font-medium text-foreground/80">{a.breed}</td>
                   <td className="px-5 py-3 text-muted-foreground">{formatDateTR(a.purchaseDate)}</td>
-                  <td className="px-5 py-3 text-right tabular-nums">{formatTRY(a.purchasePrice)}</td>
+                  <td className="px-5 py-3 text-right font-semibold tabular-nums text-foreground">{formatTRY(a.purchasePrice)}</td>
                   <td className="px-5 py-3">
                     <div className="flex justify-end gap-1">
                       <TooltipProvider delayDuration={150}>
@@ -404,5 +402,26 @@ function BulkAddDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function TypeBadge({ type }: { type: import("@/lib/store").AnimalType }) {
+  const groupColors: Record<string, { bg: string; text: string; dot: string }> = {
+    "Büyükbaş": { bg: "color-mix(in oklab, var(--chart-2) 18%, transparent)", text: "var(--chart-2)", dot: "var(--chart-2)" },
+    "Küçükbaş": { bg: "color-mix(in oklab, var(--chart-1) 18%, transparent)", text: "var(--chart-1)", dot: "var(--chart-1)" },
+    "Kümes":   { bg: "color-mix(in oklab, var(--chart-3) 18%, transparent)", text: "var(--chart-3)", dot: "var(--chart-3)" },
+  };
+  let g = "Büyükbaş" as import("@/lib/store").AnimalGroup;
+  if ((["Koyun","Kuzu","Koç","Keçi","Oğlak","Teke"] as string[]).includes(type)) g = "Küçükbaş";
+  if ((["Tavuk","Horoz","Civciv","Hindi","Palaz"] as string[]).includes(type)) g = "Kümes";
+  const c = groupColors[g];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-semibold"
+      style={{ background: c.bg, color: c.text }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.dot }} />
+      {type}
+    </span>
   );
 }

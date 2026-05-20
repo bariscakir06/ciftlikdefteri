@@ -53,6 +53,44 @@ export interface Sale {
   paidAmount: number;
 }
 
+export type ExpenseCategory =
+  | "Yem"
+  | "Gübre"
+  | "Veteriner / İlaç"
+  | "Aşı"
+  | "İşçilik"
+  | "Yakıt"
+  | "Elektrik / Su"
+  | "Nakliye"
+  | "Bakım / Onarım"
+  | "Diğer";
+
+export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
+  "Yem", "Gübre", "Veteriner / İlaç", "Aşı", "İşçilik",
+  "Yakıt", "Elektrik / Su", "Nakliye", "Bakım / Onarım", "Diğer",
+];
+
+export const EXPENSE_COLORS: Record<ExpenseCategory, string> = {
+  "Yem": "var(--chart-4)",
+  "Gübre": "var(--chart-3)",
+  "Veteriner / İlaç": "var(--chart-5)",
+  "Aşı": "var(--chart-1)",
+  "İşçilik": "var(--chart-2)",
+  "Yakıt": "var(--chart-5)",
+  "Elektrik / Su": "var(--chart-3)",
+  "Nakliye": "var(--chart-1)",
+  "Bakım / Onarım": "var(--chart-2)",
+  "Diğer": "var(--chart-4)",
+};
+
+export interface Expense {
+  id: string;
+  date: string;
+  category: ExpenseCategory;
+  description: string;
+  amount: number;
+}
+
 interface StoreState {
   isAuthenticated: boolean;
   animals: Animal[];

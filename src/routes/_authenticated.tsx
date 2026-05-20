@@ -7,11 +7,12 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthLayout,
 });
 
-const NAV = [
+type NavItem = { to: "/" | "/inventory" | "/sales"; label: string; icon: typeof LayoutGrid; exact?: boolean };
+const NAV: NavItem[] = [
   { to: "/", label: "Genel Bakış", icon: LayoutGrid, exact: true },
   { to: "/inventory", label: "Mevcut Mallar", icon: Boxes },
   { to: "/sales", label: "Satış & Cari", icon: Receipt },
-] as const;
+];
 
 function AuthLayout() {
   const { isAuthenticated, logout } = useStore();

@@ -1,6 +1,34 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-export type AnimalType = "Düve" | "Tosun" | "İnek" | "Buzağı" | "Boğa";
+export type AnimalType =
+  // Büyükbaş
+  | "İnek" | "Düve" | "Tosun" | "Buzağı" | "Boğa"
+  // Küçükbaş
+  | "Koyun" | "Kuzu" | "Koç" | "Keçi" | "Oğlak" | "Teke"
+  // Kümes
+  | "Tavuk" | "Horoz" | "Civciv" | "Hindi" | "Palaz";
+
+export type AnimalGroup = "Büyükbaş" | "Küçükbaş" | "Kümes";
+
+export const TYPE_GROUPS: Record<AnimalGroup, AnimalType[]> = {
+  "Büyükbaş": ["İnek", "Düve", "Tosun", "Buzağı", "Boğa"],
+  "Küçükbaş": ["Koyun", "Kuzu", "Koç", "Keçi", "Oğlak", "Teke"],
+  "Kümes": ["Tavuk", "Horoz", "Civciv", "Hindi", "Palaz"],
+};
+
+const CATTLE_BREEDS = ["Holstein", "Simental", "Montofon", "Jersey", "Angus", "Şarole", "Yerli Kara", "Melez"];
+const SHEEP_BREEDS = ["Merinos", "Akkaraman", "Kıvırcık", "Sakız", "İvesi", "Karayaka", "Romanov", "Morkaraman"];
+const GOAT_BREEDS = ["Saanen", "Kıl Keçisi", "Ankara (Tiftik)", "Halep (Şami)", "Alpin", "Honamlı"];
+const CHICKEN_BREEDS = ["Yumurtacı (Lohmann)", "Etlik (Ross)", "Köy Tavuğu", "Denizli", "Gerze", "Sebright"];
+const TURKEY_BREEDS = ["Bronz", "Beyaz", "Bursa Hindisi", "Siyah Kanatlı"];
+
+export const BREEDS_BY_TYPE: Record<AnimalType, string[]> = {
+  "İnek": CATTLE_BREEDS, "Düve": CATTLE_BREEDS, "Tosun": CATTLE_BREEDS, "Buzağı": CATTLE_BREEDS, "Boğa": CATTLE_BREEDS,
+  "Koyun": SHEEP_BREEDS, "Kuzu": SHEEP_BREEDS, "Koç": SHEEP_BREEDS,
+  "Keçi": GOAT_BREEDS, "Oğlak": GOAT_BREEDS, "Teke": GOAT_BREEDS,
+  "Tavuk": CHICKEN_BREEDS, "Horoz": CHICKEN_BREEDS, "Civciv": CHICKEN_BREEDS,
+  "Hindi": TURKEY_BREEDS, "Palaz": TURKEY_BREEDS,
+};
 
 export interface Animal {
   id: string;

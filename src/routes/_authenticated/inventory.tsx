@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { useStore, formatTRY, formatDateTR, type Animal, type AnimalType } from "@/lib/store";
+import { useStore, formatTRY, formatDateTR, TYPE_GROUPS, BREEDS_BY_TYPE, type Animal, type AnimalType } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
   Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger,
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/inventory")({
   component: Inventory,
 });
 
-const TYPES: AnimalType[] = ["Düve", "Tosun", "İnek", "Buzağı", "Boğa"];
+const OTHER_BREED = "__other__";
 
 function Inventory() {
   const { animals, addAnimal, deleteAnimal } = useStore();
@@ -175,24 +175,35 @@ function AddAnimalDialog({
   onAdd: (a: Omit<Animal, "id">) => void;
 }) {
   const [tagNo, setTagNo] = useState("");
-  const [type, setType] = useState<AnimalType>("Düve");
-  const [breed, setBreed] = useState("");
+  const [type, setType] = useState<AnimalType>("İnek");
+  const [breedChoice, setBreedChoice] = useState<string>(BREEDS_BY_TYPE["İnek"][0]);
+  const [customBreed, setCustomBreed] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().slice(0, 10));
   const [purchasePrice, setPurchasePrice] = useState("");
 
+  const breedOptions = BREEDS_BY_TYPE[type];
+
   const reset = () => {
-    setTagNo(""); setType("Düve"); setBreed("");
+    setTagNo(""); setType("İnek");
+    setBreedChoice(BREEDS_BY_TYPE["İnek"][0]); setCustomBreed("");
     setPurchaseDate(new Date().toISOString().slice(0, 10));
     setPurchasePrice("");
   };
 
+  const handleTypeChange = (v: AnimalType) => {
+    setType(v);
+    setBreedChoice(BREEDS_BY_TYPE[v][0]);
+    setCustomBreed("");
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!tagNo || !breed || !purchasePrice) {
+    const finalBreed = breedChoice === OTHER_BREED ? customBreed.trim() : breedChoice;
+    if (!tagNo || !finalBreed || !purchasePrice) {
       toast.error("Lütfen tüm alanları doldurun");
       return;
     }
-    onAdd({ tagNo, type, breed, purchaseDate, purchasePrice: Number(purchasePrice) });
+    onAdd({ tagNo, type, breed: finalBreed, purchaseDate, purchasePrice: Number(purchasePrice) });
     toast.success("Yeni hayvan eklendi");
     reset();
     onOpenChange(false);
@@ -213,16 +224,38 @@ function AddAnimalDialog({
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Tür</Label>
-              <Select value={type} onValueChange={(v: AnimalType) => setType(v)}>
+              <Select value={type} onValueChange={(v: AnimalType) => handleTypeChange(v)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {(Object.keys(TYPE_GROUPS) as Array<keyof typeof TYPE_GROUPS>).map((g, i) => (
+                    <SelectGroup key={g}>
+                      {i > 0 && <SelectSeparator />}
+                      <SelectLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">{g}</SelectLabel>
+                      {TYPE_GROUPS[g].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectGroup>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label className="text-xs text-muted-foreground">Irk / Cins</Label>
-              <Input value={breed} onChange={(e) => setBreed(e.target.value)} placeholder="Holstein, Simental…" required />
+              <Select value={breedChoice} onValueChange={setBreedChoice}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {breedOptions.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                  <SelectSeparator />
+                  <SelectItem value={OTHER_BREED}>Diğer (elle gir)</SelectItem>
+                </SelectContent>
+              </Select>
+              {breedChoice === OTHER_BREED && (
+                <Input
+                  value={customBreed}
+                  onChange={(e) => setCustomBreed(e.target.value)}
+                  placeholder="Irk / cins adı"
+                  className="mt-2"
+                  required
+                />
+              )}
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-muted-foreground">Alış Tarihi</Label>

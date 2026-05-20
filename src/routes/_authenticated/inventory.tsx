@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { useStore, formatTRY, formatDateTR, type Animal, type AnimalType } from "@/lib/store";
+import { useStore, formatTRY, formatDateTR, TYPE_GROUPS, BREEDS_BY_TYPE, type Animal, type AnimalType } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

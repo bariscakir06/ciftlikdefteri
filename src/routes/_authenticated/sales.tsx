@@ -72,7 +72,7 @@ function SalesPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border bg-muted/40 text-left text-xs font-medium text-muted-foreground">
+              <tr className="border-b border-border bg-muted/60 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <th className="px-5 py-3">Satış Tarihi</th>
                 <th className="px-5 py-3">Küpe No</th>
                 <th className="px-5 py-3">Alıcı</th>
@@ -90,15 +90,15 @@ function SalesPage() {
                   </td>
                 </tr>
               )}
-              {filtered.map((s) => {
+              {filtered.map((s, i) => {
                 const balance = s.salePrice - s.paidAmount;
                 return (
-                  <tr key={s.id} className="border-b border-border last:border-0 transition-colors hover:bg-muted/30">
+                  <tr key={s.id} className="border-b border-border/70 transition-colors last:border-0 even:bg-muted/20 hover:bg-[color:var(--accent)]/40">
                     <td className="px-5 py-3 text-muted-foreground">{formatDateTR(s.saleDate)}</td>
-                    <td className="px-5 py-3 font-medium tabular-nums">{s.tagNo}</td>
+                    <td className="px-5 py-3 font-semibold tabular-nums text-foreground">{s.tagNo}</td>
                     <td className="px-5 py-3">
                       <div className="flex flex-col">
-                        <span className="font-medium">{s.buyerName}</span>
+                        <span className="font-semibold text-foreground">{s.buyerName}</span>
                         <span className="text-xs text-muted-foreground">{s.animalType} · {s.breed}</span>
                       </div>
                     </td>
@@ -110,12 +110,24 @@ function SalesPage() {
                         </span>
                       ) : "—"}
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums">{formatTRY(s.salePrice)}</td>
+                    <td className="px-5 py-3 text-right font-semibold tabular-nums text-foreground">{formatTRY(s.salePrice)}</td>
                     <td className="px-5 py-3 text-right tabular-nums">
                       {balance > 0 ? (
-                        <span className="font-medium text-destructive">{formatTRY(balance)}</span>
+                        <span
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold"
+                          style={{ background: "color-mix(in oklab, var(--chart-5) 16%, transparent)", color: "var(--chart-5)" }}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--chart-5)" }} />
+                          {formatTRY(balance)}
+                        </span>
                       ) : (
-                        <span className="text-muted-foreground">Kapalı</span>
+                        <span
+                          className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold"
+                          style={{ background: "color-mix(in oklab, var(--chart-1) 16%, transparent)", color: "var(--chart-1)" }}
+                        >
+                          <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--chart-1)" }} />
+                          Kapalı
+                        </span>
                       )}
                     </td>
                     <td className="px-5 py-3">

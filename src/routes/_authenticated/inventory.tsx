@@ -404,3 +404,24 @@ function BulkAddDialog({
     </Dialog>
   );
 }
+
+function TypeBadge({ type }: { type: import("@/lib/store").AnimalType }) {
+  const groupColors: Record<string, { bg: string; text: string; dot: string }> = {
+    "Büyükbaş": { bg: "color-mix(in oklab, var(--chart-2) 18%, transparent)", text: "var(--chart-2)", dot: "var(--chart-2)" },
+    "Küçükbaş": { bg: "color-mix(in oklab, var(--chart-1) 18%, transparent)", text: "var(--chart-1)", dot: "var(--chart-1)" },
+    "Kümes":   { bg: "color-mix(in oklab, var(--chart-3) 18%, transparent)", text: "var(--chart-3)", dot: "var(--chart-3)" },
+  };
+  let g = "Büyükbaş" as import("@/lib/store").AnimalGroup;
+  if ((["Koyun","Kuzu","Koç","Keçi","Oğlak","Teke"] as string[]).includes(type)) g = "Küçükbaş";
+  if ((["Tavuk","Horoz","Civciv","Hindi","Palaz"] as string[]).includes(type)) g = "Kümes";
+  const c = groupColors[g];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-xs font-semibold"
+      style={{ background: c.bg, color: c.text }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.dot }} />
+      {type}
+    </span>
+  );
+}

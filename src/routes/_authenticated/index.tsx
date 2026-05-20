@@ -42,7 +42,7 @@ function startOfWeek(d: Date) {
 
 function Dashboard() {
   const { animals, sales } = useStore();
-  const [range, setRange] = useState<"monthly" | "yearly">("monthly");
+  const [range, setRange] = useState<Range>("monthly");
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -62,28 +62,56 @@ function Dashboard() {
   }, [animals, sales]);
 
   const chartData = useMemo(() => {
-    if (range === "monthly") {
-      // last 12 months
-      const now = new Date();
-      const buckets: { label: string; ciro: number; adet: number }[] = [];
-      for (let i = 11; i >= 0; i--) {
+    const MONTHS_TR = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+    const now = new Date();
+
+    const monthBuckets = (count: number) => {
+      const buckets: { label: string; ciro: number; adet: number; key: string }[] = [];
+      for (let i = count - 1; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        buckets.push({ label: MONTHS_TR[d.getMonth()], ciro: 0, adet: 0 });
+        buckets.push({
+          label: count > 6 ? MONTHS_TR[d.getMonth()] : `${MONTHS_TR[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`,
+          ciro: 0, adet: 0,
+          key: `${d.getFullYear()}-${d.getMonth()}`,
+        });
       }
       sales.forEach((s) => {
         const d = new Date(s.saleDate);
-        const diff = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
-        if (diff >= 0 && diff < 12) {
-          const idx = 11 - diff;
-          buckets[idx].ciro += s.salePrice;
-          buckets[idx].adet += 1;
-        }
+        const k = `${d.getFullYear()}-${d.getMonth()}`;
+        const b = buckets.find((x) => x.key === k);
+        if (b) { b.ciro += s.salePrice; b.adet += 1; }
       });
       return buckets;
-    }
+    };
+
+    const weekBuckets = (count: number) => {
+      const buckets: { label: string; ciro: number; adet: number; start: number; end: number }[] = [];
+      const thisWeek = startOfWeek(now);
+      for (let i = count - 1; i >= 0; i--) {
+        const ws = new Date(thisWeek);
+        ws.setDate(ws.getDate() - i * 7);
+        const we = new Date(ws);
+        we.setDate(we.getDate() + 7);
+        buckets.push({
+          label: `${ws.getDate()} ${MONTHS_TR[ws.getMonth()]}`,
+          ciro: 0, adet: 0,
+          start: ws.getTime(), end: we.getTime(),
+        });
+      }
+      sales.forEach((s) => {
+        const t = new Date(s.saleDate).getTime();
+        const b = buckets.find((x) => t >= x.start && t < x.end);
+        if (b) { b.ciro += s.salePrice; b.adet += 1; }
+      });
+      return buckets;
+    };
+
+    if (range === "weekly") return weekBuckets(12);
+    if (range === "quarterly") return weekBuckets(13);
+    if (range === "halfyear") return monthBuckets(6);
+    if (range === "monthly") return monthBuckets(12);
     // yearly: last 5 years
-    const now = new Date().getFullYear();
-    const years = Array.from({ length: 5 }, (_, i) => now - 4 + i);
+    const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - 4 + i);
     return years.map((y) => {
       const yearly = sales.filter((s) => new Date(s.saleDate).getFullYear() === y);
       return {

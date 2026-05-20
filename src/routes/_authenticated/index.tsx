@@ -14,7 +14,31 @@ export const Route = createFileRoute("/_authenticated/")({
   component: Dashboard,
 });
 
-const MONTHS_TR = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+type Range = "weekly" | "monthly" | "quarterly" | "halfyear" | "yearly";
+
+const RANGE_LABELS: Record<Range, string> = {
+  weekly: "Haftalık (Son 12 Hafta)",
+  monthly: "Aylık (Son 12 Ay)",
+  quarterly: "3 Aylık (Haftalık)",
+  halfyear: "6 Aylık (Aylık)",
+  yearly: "Yıllık (Son 5 Yıl)",
+};
+
+const RANGE_HINTS: Record<Range, string> = {
+  weekly: "Son 12 hafta",
+  monthly: "Son 12 ay",
+  quarterly: "Son 3 ay · haftalık dağılım",
+  halfyear: "Son 6 ay · aylık dağılım",
+  yearly: "Son 5 yıl",
+};
+
+function startOfWeek(d: Date) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  const day = (x.getDay() + 6) % 7; // Monday-based
+  x.setDate(x.getDate() - day);
+  return x;
+}
 
 function Dashboard() {
   const { animals, sales } = useStore();

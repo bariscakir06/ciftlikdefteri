@@ -137,6 +137,7 @@ function Inventory() {
       </div>
 
       <AddAnimalDialog open={addOpen} onOpenChange={setAddOpen} onAdd={addAnimal} />
+      <BulkAddDialog open={bulkOpen} onOpenChange={setBulkOpen} onAdd={addAnimalsBulk} />
       <SellDialog animal={sellTarget} open={!!sellTarget} onOpenChange={(b) => !b && setSellTarget(null)} />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(b) => !b && setDeleteTarget(null)}>

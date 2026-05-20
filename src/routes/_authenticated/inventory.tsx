@@ -17,9 +17,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, HandCoins, Trash2, Search } from "lucide-react";
+import { Plus, HandCoins, Trash2, Search, Layers } from "lucide-react";
 import { SellDialog } from "@/components/sell-dialog";
 import { toast } from "sonner";
+
+export const Route = createFileRoute("/_authenticated/inventory")({
+  head: () => ({ meta: [{ title: "Mevcut Mallar — Çiftlik Defteri" }] }),
+  component: Inventory,
+});
 
 export const Route = createFileRoute("/_authenticated/inventory")({
   head: () => ({ meta: [{ title: "Mevcut Mallar — Çiftlik Defteri" }] }),

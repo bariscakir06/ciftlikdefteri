@@ -20,7 +20,9 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (isAuthenticated) return <Navigate to="/" />;
+  useEffect(() => {
+    if (isAuthenticated) navigate({ to: "/" });
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();

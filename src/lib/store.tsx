@@ -95,13 +95,17 @@ interface StoreState {
   isAuthenticated: boolean;
   animals: Animal[];
   sales: Sale[];
+  expenses: Expense[];
   login: (u: string, p: string) => boolean;
   logout: () => void;
   addAnimal: (a: Omit<Animal, "id">) => void;
+  addAnimalsBulk: (list: Array<Omit<Animal, "id">>) => void;
   deleteAnimal: (id: string) => void;
   sellAnimal: (s: Omit<Sale, "id" | "tagNo" | "animalType" | "breed" | "purchasePrice">) => void;
   deleteSale: (id: string) => void;
   updateSalePayment: (id: string, paidAmount: number) => void;
+  addExpense: (e: Omit<Expense, "id">) => void;
+  deleteExpense: (id: string) => void;
 }
 
 const StoreCtx = createContext<StoreState | null>(null);

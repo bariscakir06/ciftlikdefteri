@@ -110,7 +110,14 @@ function ExpensesPage() {
                   <td className="px-5 py-3 text-right font-semibold tabular-nums text-foreground">{formatTRY(e.amount)}</td>
                   <td className="px-5 py-3 text-right">
                     <button
-                      onClick={() => { deleteExpense(e.id); toast.success("Gider silindi"); }}
+                      onClick={() => {
+                        deleteExpense(e.id)
+                          .then(() => toast.success("Gider silindi"))
+                          .catch((error) => {
+                            console.error(error);
+                            toast.error("Gider silinemedi");
+                          });
+                      }}
                       className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" strokeWidth={1.75} />
@@ -133,7 +140,7 @@ function AddExpenseDialog({
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
-  onAdd: (e: { date: string; category: ExpenseCategory; description: string; amount: number }) => void;
+  onAdd: (e: { date: string; category: ExpenseCategory; description: string; amount: number }) => Promise<void> | void;
 }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [category, setCategory] = useState<ExpenseCategory>("Yem");
@@ -145,13 +152,18 @@ function AddExpenseDialog({
     setCategory("Yem"); setDescription(""); setAmount("");
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!amount) { toast.error("Tutar girin"); return; }
-    onAdd({ date, category, description: description.trim(), amount: Number(amount) });
-    toast.success("Gider eklendi");
-    reset();
-    onOpenChange(false);
+    try {
+      await onAdd({ date, category, description: description.trim(), amount: Number(amount) });
+      toast.success("Gider eklendi");
+      reset();
+      onOpenChange(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Gider eklenemedi");
+    }
   };
 
   return (

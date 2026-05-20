@@ -34,7 +34,7 @@ export function SellDialog({
     setSaleDate(new Date().toISOString().slice(0, 10));
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!animal) return;
     const price = Number(salePrice);
@@ -43,17 +43,22 @@ export function SellDialog({
       toast.error("Alıcı adı ve satış fiyatı zorunlu");
       return;
     }
-    sellAnimal({
-      animalId: animal.id,
-      buyerName,
-      buyerPhone,
-      salePrice: price,
-      paidAmount: paid,
-      saleDate,
-    });
-    toast.success("Satış kaydedildi");
-    reset();
-    onOpenChange(false);
+    try {
+      await sellAnimal({
+        animalId: animal.id,
+        buyerName,
+        buyerPhone,
+        salePrice: price,
+        paidAmount: paid,
+        saleDate,
+      });
+      toast.success("Satış kaydedildi");
+      reset();
+      onOpenChange(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Satış kaydedilemedi");
+    }
   };
 
   return (

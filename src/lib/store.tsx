@@ -1,4 +1,27 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  browserLocalPersistence,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  setPersistence,
+  signInWithEmailAndPassword,
+  signOut,
+  type User,
+} from "firebase/auth";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  query,
+  updateDoc,
+  where,
+  writeBatch,
+  type DocumentData,
+  type QueryDocumentSnapshot,
+} from "firebase/firestore";
+import { auth, db } from "@/firebase";
 
 export type AnimalType =
   // Büyükbaş
@@ -9,6 +32,7 @@ export type AnimalType =
   | "Tavuk" | "Horoz" | "Civciv" | "Hindi" | "Palaz";
 
 export type AnimalGroup = "Büyükbaş" | "Küçükbaş" | "Kümes";
+export type AnimalStatus = "Aktif" | "Satıldı";
 
 export const TYPE_GROUPS: Record<AnimalGroup, AnimalType[]> = {
   "Büyükbaş": ["İnek", "Düve", "Tosun", "Buzağı", "Boğa"],
@@ -30,16 +54,21 @@ export const BREEDS_BY_TYPE: Record<AnimalType, string[]> = {
   "Hindi": TURKEY_BREEDS, "Palaz": TURKEY_BREEDS,
 };
 
-export interface Animal {
+interface TenantDoc {
+  userId: string;
+}
+
+export interface Animal extends TenantDoc {
   id: string;
   tagNo: string;
   type: AnimalType;
   breed: string;
   purchaseDate: string;
   purchasePrice: number;
+  status: AnimalStatus;
 }
 
-export interface Sale {
+export interface Sale extends TenantDoc {
   id: string;
   animalId: string;
   tagNo: string;
@@ -83,7 +112,7 @@ export const EXPENSE_COLORS: Record<ExpenseCategory, string> = {
   "Diğer": "var(--chart-4)",
 };
 
-export interface Expense {
+export interface Expense extends TenantDoc {
   id: string;
   date: string;
   category: ExpenseCategory;
@@ -92,175 +121,209 @@ export interface Expense {
 }
 
 interface StoreState {
+  authReady: boolean;
+  currentUser: User | null;
   isAuthenticated: boolean;
   animals: Animal[];
   sales: Sale[];
   expenses: Expense[];
-  login: (u: string, p: string) => boolean;
-  logout: () => void;
-  addAnimal: (a: Omit<Animal, "id">) => void;
-  addAnimalsBulk: (list: Array<Omit<Animal, "id">>) => void;
-  deleteAnimal: (id: string) => void;
-  sellAnimal: (s: Omit<Sale, "id" | "tagNo" | "animalType" | "breed" | "purchasePrice">) => void;
-  deleteSale: (id: string) => void;
-  updateSalePayment: (id: string, paidAmount: number) => void;
-  addExpense: (e: Omit<Expense, "id">) => void;
-  deleteExpense: (id: string) => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  addAnimal: (a: Omit<Animal, "id" | "userId" | "status">) => Promise<void>;
+  addAnimalsBulk: (list: Array<Omit<Animal, "id" | "userId" | "status">>) => Promise<void>;
+  deleteAnimal: (id: string) => Promise<void>;
+  sellAnimal: (s: Omit<Sale, "id" | "userId" | "tagNo" | "animalType" | "breed" | "purchasePrice">) => Promise<void>;
+  deleteSale: (id: string) => Promise<void>;
+  updateSalePayment: (id: string, paidAmount: number) => Promise<void>;
+  addExpense: (e: Omit<Expense, "id" | "userId">) => Promise<void>;
+  deleteExpense: (id: string) => Promise<void>;
 }
 
 const StoreCtx = createContext<StoreState | null>(null);
 
-const SEED_ANIMALS: Animal[] = [
-  { id: "a1", tagNo: "TR-34-001", type: "Düve", breed: "Holstein", purchaseDate: "2025-08-12", purchasePrice: 42000 },
-  { id: "a2", tagNo: "TR-34-002", type: "Tosun", breed: "Simental", purchaseDate: "2025-09-03", purchasePrice: 38500 },
-  { id: "a3", tagNo: "TR-34-003", type: "İnek", breed: "Holstein", purchaseDate: "2025-07-21", purchasePrice: 55000 },
-  { id: "a4", tagNo: "TR-34-004", type: "Tosun", breed: "Angus", purchaseDate: "2025-10-15", purchasePrice: 47000 },
-];
-
-const SEED_SALES: Sale[] = [
-  {
-    id: "s1",
-    animalId: "x1",
-    tagNo: "TR-34-100",
-    animalType: "Tosun",
-    breed: "Simental",
-    purchasePrice: 35000,
-    saleDate: "2025-11-04",
-    buyerName: "Mehmet Yılmaz",
-    buyerPhone: "0532 555 1122",
-    salePrice: 52000,
-    paidAmount: 52000,
-  },
-  {
-    id: "s2",
-    animalId: "x2",
-    tagNo: "TR-34-101",
-    animalType: "Düve",
-    breed: "Holstein",
-    purchasePrice: 40000,
-    saleDate: "2026-02-18",
-    buyerName: "Ahmet Kaya",
-    buyerPhone: "0533 444 2211",
-    salePrice: 58000,
-    paidAmount: 30000,
-  },
-  {
-    id: "s3",
-    animalId: "x3",
-    tagNo: "TR-34-102",
-    animalType: "İnek",
-    breed: "Holstein",
-    purchasePrice: 50000,
-    saleDate: "2026-04-09",
-    buyerName: "Hasan Demir",
-    buyerPhone: "0535 222 9988",
-    salePrice: 71000,
-    paidAmount: 71000,
-  },
-  {
-    id: "s4",
-    animalId: "x4",
-    tagNo: "TR-34-103",
-    animalType: "Tosun",
-    breed: "Angus",
-    purchasePrice: 44000,
-    saleDate: "2026-05-02",
-    buyerName: "Ali Şahin",
-    buyerPhone: "0534 111 7766",
-    salePrice: 63000,
-    paidAmount: 63000,
-  },
-];
-
-const SEED_EXPENSES: Expense[] = [
-  { id: "e1", date: "2026-04-08", category: "Yem", description: "TMR yem 2 ton", amount: 18500 },
-  { id: "e2", date: "2026-04-22", category: "Veteriner / İlaç", description: "Antibiyotik & vitamin", amount: 3200 },
-  { id: "e3", date: "2026-05-03", category: "Gübre", description: "Ahır temizliği & gübre çıkışı", amount: 1500 },
-  { id: "e4", date: "2026-05-10", category: "İşçilik", description: "Aylık çoban ücreti", amount: 12000 },
-];
-
-const KEY = "ciftlik-defteri-v1";
-
-interface Persisted {
-  animals: Animal[];
-  sales: Sale[];
-  expenses: Expense[];
-  isAuthenticated: boolean;
+function requireUser(user: User | null) {
+  if (!user) throw new Error("Oturum bulunamadı");
+  return user;
 }
 
-function loadPersisted(): Persisted {
-  const fallback = { animals: SEED_ANIMALS, sales: SEED_SALES, expenses: SEED_EXPENSES, isAuthenticated: false };
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return fallback;
-    const parsed = JSON.parse(raw);
-    return { ...fallback, ...parsed, expenses: parsed.expenses ?? SEED_EXPENSES };
-  } catch {
-    return fallback;
-  }
+function asAnimal(snap: QueryDocumentSnapshot<DocumentData>): Animal {
+  const data = snap.data();
+  return {
+    id: snap.id,
+    userId: data.userId,
+    tagNo: data.tagNo ?? "",
+    type: data.type ?? "İnek",
+    breed: data.breed ?? "",
+    purchaseDate: data.purchaseDate ?? "",
+    purchasePrice: Number(data.purchasePrice ?? 0),
+    status: data.status === "Satıldı" ? "Satıldı" : "Aktif",
+  };
+}
+
+function asSale(snap: QueryDocumentSnapshot<DocumentData>): Sale {
+  const data = snap.data();
+  return {
+    id: snap.id,
+    userId: data.userId,
+    animalId: data.animalId ?? "",
+    tagNo: data.tagNo ?? "",
+    animalType: data.animalType ?? "İnek",
+    breed: data.breed ?? "",
+    purchasePrice: Number(data.purchasePrice ?? 0),
+    saleDate: data.saleDate ?? "",
+    buyerName: data.buyerName ?? "",
+    buyerPhone: data.buyerPhone ?? "",
+    salePrice: Number(data.salePrice ?? 0),
+    paidAmount: Number(data.paidAmount ?? 0),
+  };
+}
+
+function asExpense(snap: QueryDocumentSnapshot<DocumentData>): Expense {
+  const data = snap.data();
+  return {
+    id: snap.id,
+    userId: data.userId,
+    date: data.date ?? "",
+    category: data.category ?? "Diğer",
+    description: data.description ?? "",
+    amount: Number(data.amount ?? 0),
+  };
+}
+
+function sortDescByDate<T>(list: T[], getDate: (item: T) => string) {
+  return [...list].sort((a, b) => new Date(getDate(b)).getTime() - new Date(getDate(a)).getTime());
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [animals, setAnimals] = useState<Animal[]>(SEED_ANIMALS);
-  const [sales, setSales] = useState<Sale[]>(SEED_SALES);
-  const [expenses, setExpenses] = useState<Expense[]>(SEED_EXPENSES);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [allAnimals, setAllAnimals] = useState<Animal[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
 
   useEffect(() => {
-    const p = loadPersisted();
-    setAnimals(p.animals);
-    setSales(p.sales);
-    setExpenses(p.expenses);
-    setIsAuthenticated(p.isAuthenticated);
-    setHydrated(true);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setAuthReady(true);
+    });
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    localStorage.setItem(KEY, JSON.stringify({ animals, sales, expenses, isAuthenticated }));
-  }, [animals, sales, expenses, isAuthenticated, hydrated]);
+    if (!currentUser) {
+      setAllAnimals([]);
+      setSales([]);
+      setExpenses([]);
+      return;
+    }
+
+    const uid = currentUser.uid;
+    const animalsQuery = query(collection(db, "animals"), where("userId", "==", uid));
+    const salesQuery = query(collection(db, "sales"), where("userId", "==", uid));
+    const expensesQuery = query(collection(db, "expenses"), where("userId", "==", uid));
+
+    const unsubAnimals = onSnapshot(animalsQuery, (snapshot) => {
+      setAllAnimals(sortDescByDate(snapshot.docs.map(asAnimal), (animal) => animal.purchaseDate));
+    });
+    const unsubSales = onSnapshot(salesQuery, (snapshot) => {
+      setSales(sortDescByDate(snapshot.docs.map(asSale), (sale) => sale.saleDate));
+    });
+    const unsubExpenses = onSnapshot(expensesQuery, (snapshot) => {
+      setExpenses(sortDescByDate(snapshot.docs.map(asExpense), (expense) => expense.date));
+    });
+
+    return () => {
+      unsubAnimals();
+      unsubSales();
+      unsubExpenses();
+    };
+  }, [currentUser]);
+
+  const animals = useMemo(() => allAnimals.filter((animal) => animal.status !== "Satıldı"), [allAnimals]);
 
   const value: StoreState = {
-    isAuthenticated,
+    authReady,
+    currentUser,
+    isAuthenticated: !!currentUser,
     animals,
     sales,
     expenses,
-    login: (u, p) => {
-      if (u === "admin" && p === "admin") {
-        setIsAuthenticated(true);
-        return true;
-      }
-      return false;
+    login: async (email, password) => {
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithEmailAndPassword(auth, email, password);
+      return true;
     },
-    logout: () => setIsAuthenticated(false),
-    addAnimal: (a) => setAnimals((prev) => [{ ...a, id: crypto.randomUUID() }, ...prev]),
-    addAnimalsBulk: (list) =>
-      setAnimals((prev) => [
-        ...list.map((a) => ({ ...a, id: crypto.randomUUID() })),
-        ...prev,
-      ]),
-    deleteAnimal: (id) => setAnimals((prev) => prev.filter((x) => x.id !== id)),
-    sellAnimal: (s) => {
-      const animal = animals.find((a) => a.id === s.animalId);
-      if (!animal) return;
-      const sale: Sale = {
-        ...s,
-        id: crypto.randomUUID(),
+    register: async (email, password) => {
+      await setPersistence(auth, browserLocalPersistence);
+      await createUserWithEmailAndPassword(auth, email, password);
+      return true;
+    },
+    logout: async () => {
+      await signOut(auth);
+    },
+    addAnimal: async (animal) => {
+      const user = requireUser(currentUser);
+      await addDoc(collection(db, "animals"), {
+        ...animal,
+        userId: user.uid,
+        status: "Aktif" satisfies AnimalStatus,
+      });
+    },
+    addAnimalsBulk: async (list) => {
+      const user = requireUser(currentUser);
+      const batch = writeBatch(db);
+      list.forEach((animal) => {
+        const ref = doc(collection(db, "animals"));
+        batch.set(ref, {
+          ...animal,
+          userId: user.uid,
+          status: "Aktif" satisfies AnimalStatus,
+        });
+      });
+      await batch.commit();
+    },
+    deleteAnimal: async (id) => {
+      requireUser(currentUser);
+      await deleteDoc(doc(db, "animals", id));
+    },
+    sellAnimal: async (saleDraft) => {
+      const user = requireUser(currentUser);
+      const animal = animals.find((a) => a.id === saleDraft.animalId);
+      if (!animal || animal.userId !== user.uid) throw new Error("Hayvan bulunamadı");
+
+      const batch = writeBatch(db);
+      const animalRef = doc(db, "animals", animal.id);
+      const saleRef = doc(collection(db, "sales"));
+
+      batch.update(animalRef, { status: "Satıldı" satisfies AnimalStatus });
+      batch.set(saleRef, {
+        ...saleDraft,
+        userId: user.uid,
         tagNo: animal.tagNo,
         animalType: animal.type,
         breed: animal.breed,
         purchasePrice: animal.purchasePrice,
-      };
-      setSales((prev) => [sale, ...prev]);
-      setAnimals((prev) => prev.filter((a) => a.id !== s.animalId));
+      });
+
+      await batch.commit();
     },
-    deleteSale: (id) => setSales((prev) => prev.filter((s) => s.id !== id)),
-    updateSalePayment: (id, paidAmount) =>
-      setSales((prev) => prev.map((s) => (s.id === id ? { ...s, paidAmount } : s))),
-    addExpense: (e) => setExpenses((prev) => [{ ...e, id: crypto.randomUUID() }, ...prev]),
-    deleteExpense: (id) => setExpenses((prev) => prev.filter((x) => x.id !== id)),
+    deleteSale: async (id) => {
+      requireUser(currentUser);
+      await deleteDoc(doc(db, "sales", id));
+    },
+    updateSalePayment: async (id, paidAmount) => {
+      requireUser(currentUser);
+      await updateDoc(doc(db, "sales", id), { paidAmount });
+    },
+    addExpense: async (expense) => {
+      const user = requireUser(currentUser);
+      await addDoc(collection(db, "expenses"), { ...expense, userId: user.uid });
+    },
+    deleteExpense: async (id) => {
+      requireUser(currentUser);
+      await deleteDoc(doc(db, "expenses", id));
+    },
   };
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;

@@ -183,13 +183,18 @@ function SalesPage() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPayTarget(null)}>İptal</Button>
             <Button
-              onClick={() => {
+              onClick={async () => {
                 if (!target) return;
                 const add = Number(payAmount);
                 const newPaid = Math.min(target.salePrice, target.paidAmount + add);
-                updateSalePayment(target.id, newPaid);
-                toast.success("Tahsilat kaydedildi");
-                setPayTarget(null);
+                try {
+                  await updateSalePayment(target.id, newPaid);
+                  toast.success("Tahsilat kaydedildi");
+                  setPayTarget(null);
+                } catch (error) {
+                  console.error(error);
+                  toast.error("Tahsilat kaydedilemedi");
+                }
               }}
             >
               Kaydet
@@ -209,8 +214,12 @@ function SalesPage() {
             <AlertDialogAction
               onClick={() => {
                 if (deleteTarget) {
-                  deleteSale(deleteTarget);
-                  toast.success("Satış silindi");
+                  deleteSale(deleteTarget)
+                    .then(() => toast.success("Satış silindi"))
+                    .catch((error) => {
+                      console.error(error);
+                      toast.error("Satış silinemedi");
+                    });
                   setDeleteTarget(null);
                 }
               }}

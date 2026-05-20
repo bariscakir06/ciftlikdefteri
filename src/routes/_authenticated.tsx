@@ -18,15 +18,15 @@ const NAV: NavItem[] = [
 ];
 
 function AuthLayout() {
-  const { isAuthenticated, logout } = useStore();
+  const { authReady, isAuthenticated, logout } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isAuthenticated) navigate({ to: "/login" });
-  }, [isAuthenticated, navigate]);
+    if (authReady && !isAuthenticated) navigate({ to: "/login" });
+  }, [authReady, isAuthenticated, navigate]);
 
-  if (!isAuthenticated) return null;
+  if (!authReady || !isAuthenticated) return null;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -66,7 +66,7 @@ function AuthLayout() {
 
         <div className="border-t border-border p-3">
           <button
-            onClick={() => { logout(); navigate({ to: "/login" }); }}
+            onClick={async () => { await logout(); navigate({ to: "/login" }); }}
             className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
           >
             <LogOut className="h-4 w-4" strokeWidth={1.75} />
@@ -82,7 +82,7 @@ function AuthLayout() {
             <Sprout className="h-4 w-4" strokeWidth={1.75} />
             <span className="text-sm font-semibold">Çiftlik Defteri</span>
           </div>
-          <button onClick={() => { logout(); navigate({ to: "/login" }); }} className="text-muted-foreground hover:text-foreground">
+          <button onClick={async () => { await logout(); navigate({ to: "/login" }); }} className="text-muted-foreground hover:text-foreground">
             <LogOut className="h-4 w-4" />
           </button>
         </header>

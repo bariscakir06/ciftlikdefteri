@@ -14,25 +14,31 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { isAuthenticated, login } = useStore();
+  const { authReady, isAuthenticated, login, register } = useStore();
   const navigate = useNavigate();
-  const [username, setUsername] = useState("admin");
+  const [mode, setMode] = useState<"login" | "register">("login");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated) navigate({ to: "/" });
-  }, [isAuthenticated, navigate]);
+    if (authReady && isAuthenticated) navigate({ to: "/" });
+  }, [authReady, isAuthenticated, navigate]);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      const ok = login(username.trim(), password);
+    try {
+      const ok = mode === "login"
+        ? await login(email.trim(), password)
+        : await register(email.trim(), password);
       setLoading(false);
       if (ok) navigate({ to: "/" });
-      else toast.error("Geçersiz kullanıcı adı veya şifre");
-    }, 300);
+    } catch (error) {
+      setLoading(false);
+      console.error(error);
+      toast.error(mode === "login" ? "Geçersiz e-posta veya şifre" : "Kayıt oluşturulamadı");
+    }
   };
 
   return (
@@ -43,7 +49,7 @@ function LoginPage() {
             <Sprout className="h-5 w-5 text-foreground" strokeWidth={1.75} />
           </div>
           <h1 className="mt-4 text-xl font-semibold tracking-tight">Çiftlik Defteri</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Yönetici girişi</p>
+          <p className="mt-1 text-sm text-muted-foreground">{mode === "login" ? "Hesabınıza giriş yapın" : "Yeni hesap oluşturun"}</p>
         </div>
 
         <form
@@ -51,14 +57,15 @@ function LoginPage() {
           className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm"
         >
           <div className="space-y-2">
-            <Label htmlFor="username" className="text-xs font-medium text-muted-foreground">
-              Kullanıcı Adı
+            <Label htmlFor="email" className="text-xs font-medium text-muted-foreground">
+              E-posta
             </Label>
             <Input
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              autoComplete="username"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               required
             />
           </div>
@@ -71,16 +78,23 @@ function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              minLength={6}
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Giriş yapılıyor…" : "Giriş Yap"}
+          <Button type="submit" className="w-full" disabled={loading || !authReady}>
+            {loading
+              ? (mode === "login" ? "Giriş yapılıyor…" : "Kayıt oluşturuluyor…")
+              : (mode === "login" ? "Giriş Yap" : "Kayıt Ol")}
           </Button>
-          <p className="text-center text-xs text-muted-foreground">
-            Demo: <span className="font-medium text-foreground">admin</span> / <span className="font-medium text-foreground">admin</span>
-          </p>
+          <button
+            type="button"
+            onClick={() => setMode((value) => value === "login" ? "register" : "login")}
+            className="w-full text-center text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {mode === "login" ? "Hesabınız yok mu? Kayıt olun" : "Zaten hesabınız var mı? Giriş yapın"}
+          </button>
         </form>
       </div>
     </main>

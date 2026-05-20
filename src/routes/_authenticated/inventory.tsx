@@ -155,8 +155,12 @@ function Inventory() {
             <AlertDialogAction
               onClick={() => {
                 if (deleteTarget) {
-                  deleteAnimal(deleteTarget.id);
-                  toast.success("Hayvan silindi");
+                  deleteAnimal(deleteTarget.id)
+                    .then(() => toast.success("Hayvan silindi"))
+                    .catch((error) => {
+                      console.error(error);
+                      toast.error("Hayvan silinemedi");
+                    });
                   setDeleteTarget(null);
                 }
               }}
@@ -176,7 +180,7 @@ function AddAnimalDialog({
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
-  onAdd: (a: Omit<Animal, "id">) => void;
+  onAdd: (a: Omit<Animal, "id" | "userId" | "status">) => Promise<void> | void;
 }) {
   const [tagNo, setTagNo] = useState("");
   const [type, setType] = useState<AnimalType>("İnek");
@@ -200,17 +204,22 @@ function AddAnimalDialog({
     setCustomBreed("");
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const finalBreed = breedChoice === OTHER_BREED ? customBreed.trim() : breedChoice;
     if (!tagNo || !finalBreed || !purchasePrice) {
       toast.error("Lütfen tüm alanları doldurun");
       return;
     }
-    onAdd({ tagNo, type, breed: finalBreed, purchaseDate, purchasePrice: Number(purchasePrice) });
-    toast.success("Yeni hayvan eklendi");
-    reset();
-    onOpenChange(false);
+    try {
+      await onAdd({ tagNo, type, breed: finalBreed, purchaseDate, purchasePrice: Number(purchasePrice) });
+      toast.success("Yeni hayvan eklendi");
+      reset();
+      onOpenChange(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Hayvan eklenemedi");
+    }
   };
 
   return (
@@ -285,7 +294,7 @@ function BulkAddDialog({
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
-  onAdd: (list: Array<Omit<Animal, "id">>) => void;
+  onAdd: (list: Array<Omit<Animal, "id" | "userId" | "status">>) => Promise<void> | void;
 }) {
   const [count, setCount] = useState("5");
   const [tagPrefix, setTagPrefix] = useState("TR-34-");
@@ -302,7 +311,7 @@ function BulkAddDialog({
     setCustomBreed("");
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     const n = Number(count);
     const start = Number(tagStart);
@@ -310,15 +319,20 @@ function BulkAddDialog({
     if (!n || n < 1 || n > 500) { toast.error("Adet 1-500 arasında olmalı"); return; }
     if (!breed || !unitPrice) { toast.error("Cins ve birim fiyat zorunlu"); return; }
     const pad = String(start + n - 1).length;
-    const list: Array<Omit<Animal, "id">> = Array.from({ length: n }, (_, i) => ({
+    const list: Array<Omit<Animal, "id" | "userId" | "status">> = Array.from({ length: n }, (_, i) => ({
       tagNo: `${tagPrefix}${String(start + i).padStart(pad, "0")}`,
       type, breed,
       purchaseDate,
       purchasePrice: Number(unitPrice),
     }));
-    onAdd(list);
-    toast.success(`${n} hayvan eklendi`);
-    onOpenChange(false);
+    try {
+      await onAdd(list);
+      toast.success(`${n} hayvan eklendi`);
+      onOpenChange(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Hayvanlar eklenemedi");
+    }
   };
 
   const previewLast = (() => {

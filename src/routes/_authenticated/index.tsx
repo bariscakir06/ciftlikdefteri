@@ -57,11 +57,24 @@ function Dashboard() {
         return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
       })
       .reduce((s, x) => s + x.salePrice, 0);
+    const monthCost = sales
+      .filter((s) => {
+        const d = new Date(s.saleDate);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      })
+      .reduce((s, x) => s + x.purchasePrice, 0);
+    const monthExpenses = expenses
+      .filter((e) => {
+        const d = new Date(e.date);
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      })
+      .reduce((s, x) => s + x.amount, 0);
     return {
       stock: animals.length,
       sold: sales.length,
       totalRevenue,
       monthRevenue,
+      monthNet: monthRevenue - monthCost - monthExpenses,
       totalExpenses,
       netProfit,
       margin,
@@ -283,8 +296,8 @@ function Dashboard() {
       )}
 
       <div className="rounded-xl border border-border bg-card p-5">
-        <p className="text-xs font-medium text-muted-foreground">Bu Ay Ciro</p>
-        <p className="mt-2 text-xl font-semibold tabular-nums">{formatTRY(stats.monthRevenue)}</p>
+        <p className="text-xs font-medium text-muted-foreground">Bu Ay Net</p>
+        <p className="mt-2 text-xl font-semibold tabular-nums">{formatTRY(stats.monthNet)}</p>
       </div>
     </div>
   );

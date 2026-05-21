@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/client",
+    "public": ".output/public",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -9,7 +9,7 @@
     "rewrites": [
       {
         "source": "**",
-        "function": "ssrServer"
+        "destination": "/index.html"
       }
     ]
   }

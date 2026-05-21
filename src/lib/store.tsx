@@ -147,6 +147,12 @@ function requireUser(user: User | null) {
   return user;
 }
 
+function requireTenantRecord<T extends TenantDoc & { id: string }>(list: T[], id: string, uid: string, message: string) {
+  const record = list.find((item) => item.id === id && item.userId === uid);
+  if (!record) throw new Error(message);
+  return record;
+}
+
 function asAnimal(snap: QueryDocumentSnapshot<DocumentData>): Animal {
   const data = snap.data();
   return {
@@ -263,7 +269,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       await signOut(auth);
     },
     addAnimal: async (animal) => {
-      const user = requireUser(currentUser);
+      const user = requireUser(auth.currentUser ?? currentUser);
       await addDoc(collection(db, "animals"), {
         ...animal,
         userId: user.uid,
@@ -271,7 +277,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
     },
     addAnimalsBulk: async (list) => {
-      const user = requireUser(currentUser);
+      const user = requireUser(auth.currentUser ?? currentUser);
       const batch = writeBatch(db);
       list.forEach((animal) => {
         const ref = doc(collection(db, "animals"));
@@ -284,11 +290,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       await batch.commit();
     },
     deleteAnimal: async (id) => {
-      requireUser(currentUser);
+      const user = requireUser(auth.currentUser ?? currentUser);
+      requireTenantRecord(allAnimals, id, user.uid, "Hayvan bulunamadı");
       await deleteDoc(doc(db, "animals", id));
     },
     sellAnimal: async (saleDraft) => {
-      const user = requireUser(currentUser);
+      const user = requireUser(auth.currentUser ?? currentUser);
       const animal = animals.find((a) => a.id === saleDraft.animalId);
       if (!animal || animal.userId !== user.uid) throw new Error("Hayvan bulunamadı");
 
@@ -309,19 +316,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       await batch.commit();
     },
     deleteSale: async (id) => {
-      requireUser(currentUser);
+      const user = requireUser(auth.currentUser ?? currentUser);
+      requireTenantRecord(sales, id, user.uid, "Satış kaydı bulunamadı");
       await deleteDoc(doc(db, "sales", id));
     },
     updateSalePayment: async (id, paidAmount) => {
-      requireUser(currentUser);
+      const user = requireUser(auth.currentUser ?? currentUser);
+      requireTenantRecord(sales, id, user.uid, "Satış kaydı bulunamadı");
       await updateDoc(doc(db, "sales", id), { paidAmount });
     },
     addExpense: async (expense) => {
-      const user = requireUser(currentUser);
+      const user = requireUser(auth.currentUser ?? currentUser);
       await addDoc(collection(db, "expenses"), { ...expense, userId: user.uid });
     },
     deleteExpense: async (id) => {
-      requireUser(currentUser);
+      const user = requireUser(auth.currentUser ?? currentUser);
+      requireTenantRecord(expenses, id, user.uid, "Gider kaydı bulunamadı");
       await deleteDoc(doc(db, "expenses", id));
     },
   };

@@ -1,5 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
+import { FirebaseError } from "firebase/app";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/firebase";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,30 +17,50 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
-  const { authReady, isAuthenticated, login, register } = useStore();
+  const { authReady, isAuthenticated, login } = useStore();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (authReady && isAuthenticated) navigate({ to: "/" });
   }, [authReady, isAuthenticated, navigate]);
 
+  const getAuthErrorMessage = (error: unknown) => {
+    if (!(error instanceof FirebaseError)) {
+      return isSignUp ? "Kayıt oluşturulamadı" : "Geçersiz e-posta veya şifre";
+    }
+
+    if (error.code === "auth/email-already-in-use") return "Bu e-posta adresi zaten kullanılıyor";
+    if (error.code === "auth/weak-password") return "Şifre en az 6 karakter olmalı";
+    if (error.code === "auth/invalid-email") return "Geçerli bir e-posta adresi girin";
+    if (error.code === "auth/invalid-credential") return "Geçersiz e-posta veya şifre";
+    if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") return "Geçersiz e-posta veya şifre";
+
+    return isSignUp ? "Kayıt oluşturulamadı" : "Giriş yapılamadı";
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (isSignUp && password !== confirmPassword) {
+      toast.error("Şifreler eşleşmiyor");
+      return;
+    }
+
     setLoading(true);
     try {
-      const ok = mode === "login"
-        ? await login(email.trim(), password)
-        : await register(email.trim(), password);
+      const ok = isSignUp
+        ? !!(await createUserWithEmailAndPassword(auth, email.trim(), password)).user
+        : await login(email.trim(), password);
       setLoading(false);
       if (ok) navigate({ to: "/" });
     } catch (error) {
       setLoading(false);
       console.error(error);
-      toast.error(mode === "login" ? "Geçersiz e-posta veya şifre" : "Kayıt oluşturulamadı");
+      toast.error(getAuthErrorMessage(error));
     }
   };
 
@@ -49,7 +72,7 @@ function LoginPage() {
             <Sprout className="h-5 w-5 text-foreground" strokeWidth={1.75} />
           </div>
           <h1 className="mt-4 text-xl font-semibold tracking-tight">Çiftlik Defteri</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{mode === "login" ? "Hesabınıza giriş yapın" : "Yeni hesap oluşturun"}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{isSignUp ? "Yeni hesap oluşturun" : "Hesabınıza giriş yapın"}</p>
         </div>
 
         <form
@@ -78,22 +101,41 @@ function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              autoComplete={isSignUp ? "new-password" : "current-password"}
               minLength={6}
               required
             />
           </div>
+          {isSignUp && (
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password" className="text-xs font-medium text-muted-foreground">
+                Şifre Tekrar
+              </Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                minLength={6}
+                required
+              />
+            </div>
+          )}
           <Button type="submit" className="w-full" disabled={loading || !authReady}>
             {loading
-              ? (mode === "login" ? "Giriş yapılıyor…" : "Kayıt oluşturuluyor…")
-              : (mode === "login" ? "Giriş Yap" : "Kayıt Ol")}
+              ? (isSignUp ? "Kayıt oluşturuluyor…" : "Giriş yapılıyor…")
+              : (isSignUp ? "Kayıt Ol" : "Giriş Yap")}
           </Button>
           <button
             type="button"
-            onClick={() => setMode((value) => value === "login" ? "register" : "login")}
+            onClick={() => {
+              setIsSignUp((value) => !value);
+              setConfirmPassword("");
+            }}
             className="w-full text-center text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            {mode === "login" ? "Hesabınız yok mu? Kayıt olun" : "Zaten hesabınız var mı? Giriş yapın"}
+            {isSignUp ? "Zaten hesabınız var mı? Giriş Yap" : "Hesabınız yok mu? Kayıt Ol"}
           </button>
         </form>
       </div>
